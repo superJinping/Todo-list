@@ -12,7 +12,8 @@ export default function Form(props) {
     }
   });
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
+    console.log('Attempting to submit form'); 
     event.preventDefault();
     if (!name.trim()) {
       return;

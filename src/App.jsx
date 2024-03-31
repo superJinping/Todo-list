@@ -21,12 +21,15 @@ const FILTER_MAP = {
 const FILTER_NAMES = Object.keys(FILTER_MAP);
 
 export default function App(props) {
+  const [error, setError] = useState(null);
+  const [name, setName] = useState('');
   const geoFindMe = () => {
     if (!navigator.geolocation) {
       console.log("Geolocation is not supported by your browser");
+      setError("Geolocation is not supported by your browser。");
     } else {
       console.log("Locating…");
-      navigator.geolocation.getCurrentPosition(success, error);
+      navigator.geolocation.getCurrentPosition(success, handleError);
     }
   };
 
@@ -48,8 +51,9 @@ export default function App(props) {
     });
   };
 
-  const error = () => {
+  const handleError = () => {
     console.log("Unable to retrieve your location");
+    setError("Unable to retrieve your location");
   };
 
   function usePersistedState(key, defaultValue) {
@@ -129,6 +133,7 @@ export default function App(props) {
   }
 
   const taskList = tasks?.filter(FILTER_MAP[filter]).map((task) => (
+    
     <Todo
       id={task.id}
       name={task.name}
@@ -150,18 +155,49 @@ export default function App(props) {
       setFilter={setFilter}
     />
   ));
-
-  function addTask(name) {
+  
+  function getLocation() {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 100000 }); 
+    });
+  }
+  
+  async function addTask(name) {
+    console.log('addTask is called with:', name);
     const id = "todo-" + nanoid();
+    let location = { latitude: "Unknown", longitude: "Unknown"};
+  
+    try {
+      const position = await getLocation();
+      location = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+      setError(null); // 如果位置获取成功，清除之前的错误信息
+    } catch (err) {
+      console.error("Geolocation error: ", err);
+      setError("Location information cannot be obtained"); // 设置错误状态
+
+    }
+  
     const newTask = {
       id: id,
       name: name,
       completed: false,
-      location: { latitude: "##", longitude: "##", error: "##" },
+      location: location
     };
-    setLastInsertedId(id);
-    setTasks([...tasks, newTask]);
+  
+    setTasks(prevTasks => {
+      const updatedTasks = [...prevTasks, newTask];
+      return updatedTasks;
+    });
+  
+    // 任务添加后清空输入
+    setName('');
   }
+  useEffect(() => {
+    console.log('Updated tasks list:', tasks);
+  }, [tasks]);
 
   const tasksNoun = taskList.length !== 1 ? "tasks" : "task";
   const headingText = `${taskList.length} ${tasksNoun} remaining`;
@@ -174,11 +210,14 @@ export default function App(props) {
       listHeadingRef.current.focus();
     }
   }, [tasks.length, prevTaskLength]);
-
+  useEffect(() => {
+    console.log("Updated tasks list:", tasks);
+  }, [tasks]);
   return (
     <div className="todoapp stack-large">
-      <h1>XXX TodoMatic</h1>
+      <h1>JYP TodoMatic</h1>
       <Form addTask={addTask} geoFindMe={geoFindMe} />{" "}
+      {error && <div className="error">{error}</div>}
       <div className="filters btn-group stack-exception">{filterList}</div>
       <h2 id="list-heading" tabIndex="-1" ref={listHeadingRef}>
         {headingText}

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import Popup from "reactjs-popup"; // W07 CAM
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import Popup from 'reactjs-popup'; // W07 CAM
 import "reactjs-popup/dist/index.css"; // W07 CAM
 import Webcam from "react-webcam"; // W07 CAM
 import { addPhoto, GetPhotoSrc } from "../db.jsx"; // W07 CAM
@@ -9,6 +9,8 @@ import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
+import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 
 function usePrevious(value) {
   const ref = useRef(null);
@@ -23,21 +25,73 @@ function usePrevious(value) {
 export default function Todo(props) {
   const [isEditing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
-
+  const { location } = props;
   const editFieldRef = useRef(null);
   const editButtonRef = useRef(null);
 
   const wasEditing = usePrevious(isEditing);
 
+
+  const mapUrl = location && location.latitude !== "Unknown" ?
+    `https://www.openstreetmap.org/?mlat=${location.latitude}&mlon=${location.longitude}` :
+    null;
   function handleChange(event) {
     setNewName(event.target.value);
   }
 
   function handleSubmit(event) {
+    
     event.preventDefault();
     props.editTask(props.id, newName);
     setNewName("");
     setEditing(false);
+  }
+  function TodoMap({ location, closePopup , name}) {
+    const [showMap, setShowMap] = useState(true);
+    if (!location || location.latitude === "Unknown" || location.longitude === "Unknown" || !showMap) {
+      return null;
+    }
+
+    const position = [location.latitude, location.longitude];
+
+    return (
+      <div style={{ position: 'relative' }}> {/* 包裹地图和关闭按钮的容器 */}
+        <MapContainer center={position} zoom={13} style={{
+          height: '80vh',
+          width: '80vw',
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)'
+        }}>
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker position={position}>
+          <LeafletPopup>{name}</LeafletPopup>
+          </Marker>
+        </MapContainer>
+        <button
+          style={{
+            position: 'absolute',
+            top: '200px',
+            right: '0px',
+            zIndex: 1000,
+            background: 'rgba(255, 255, 255, 0.5)', 
+            border: 'none', 
+            borderRadius: '4px', 
+            padding: '10px', 
+            cursor: 'pointer', 
+            boxShadow: '0 2px 4px rgba(0,0,0,0.2)' 
+          }}
+          onClick={() => {
+            closePopup && closePopup();
+          }}
+        >
+          Close Map
+        </button>
+      </div>
+    );
   }
 
   const editingTemplate = (
@@ -81,11 +135,20 @@ export default function Todo(props) {
           defaultChecked={props.completed}
           onChange={() => props.toggleTaskCompleted(props.id)}
         />
+
         <label className="todo-label" htmlFor={props.id}>
           {props.name}
-          <a href={props.location.mapURL}>(map)</a> {/*W07 CAM - improvement*/}
-          &nbsp; | &nbsp;
-          <a href={props.location.smsURL}>(sms)</a> {/*W07 CAM - improvement*/}
+          {props.location && (
+            <Popup
+              trigger={<button className="button"> View location </button>}
+              modal
+              closeOnDocumentClick
+            >
+              {close => ( 
+                <TodoMap location={props.location} name={props.name} closePopup={close} /> 
+              )}
+            </Popup>
+          )}
         </label>
       </div>
       <div className="btn-group">
@@ -108,16 +171,16 @@ export default function Todo(props) {
 
           }
           modal
-          >
-            {close => (
-              <div style={{ position: 'relative' }}>
-                <button className="close-button" onClick={close} style={closeBtnStyle}>
-                  <CloseIcon />
-                </button>
-                <WebcamCapture id={props.id} photoedTask={props.photoedTask} />
-              </div>
-            )}
-          </Popup>
+        >
+          {close => (
+            <div style={{ position: 'relative' }}>
+              <button className="close-button" onClick={close} style={closeBtnStyle}>
+                <CloseIcon />
+              </button>
+              <WebcamCapture id={props.id} photoedTask={props.photoedTask} />
+            </div>
+          )}
+        </Popup>
         <Popup
           trigger={
             <button type="button" className="btn icon-button">
@@ -126,16 +189,16 @@ export default function Todo(props) {
 
           }
           modal
-          >
-            {close => (
-              <div style={{ position: 'relative' }}>
-                <button className="close-button" onClick={close} style={closeBtnStyle}>
-                  <CloseIcon />
-                </button>
-                <ViewPhoto id={props.id} alt={props.name} />
-              </div>
-            )}
-          </Popup>
+        >
+          {close => (
+            <div style={{ position: 'relative' }}>
+              <button className="close-button" onClick={close} style={closeBtnStyle}>
+                <CloseIcon />
+              </button>
+              <ViewPhoto id={props.id} alt={props.name} />
+            </div>
+          )}
+        </Popup>
         <button
           type="button"
           className="btn btn__danger"
@@ -160,7 +223,7 @@ export default function Todo(props) {
 
 // W07 CAM - New Component WebcamCapture
 //
-const WebcamCapture = (props,closePopup) => {
+const WebcamCapture = (props, closePopup) => {
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
   const [imgId, setImgId] = useState(null);
@@ -169,7 +232,7 @@ const WebcamCapture = (props,closePopup) => {
   useEffect(() => {
     if (photoSave) {
       console.log("useEffect detected photoSave");
-      props.photoedTask(imgId); // 确保这个回调函数处理了必要的更新逻辑
+      props.photoedTask(imgId); 
       setPhotoSave(false);
     }
   }, [photoSave, imgId, props]);
@@ -188,16 +251,16 @@ const WebcamCapture = (props,closePopup) => {
     console.log("savePhoto", imgSrc);
     if (imgSrc) {
       try {
-        await addPhoto(props.id, imgSrc); 
-        alert("Photo saved successfully!"); 
+        await addPhoto(props.id, imgSrc);
+        alert("Photo saved successfully!");
         setImgId(props.id);
         setPhotoSave(true);
       } catch (error) {
-        console.error("Failed to save photo:", error); 
+        console.error("Failed to save photo:", error);
       }
     }
   };
-  
+
 
   const cancelPhoto = (id, imgSrc) => {
     console.log("cancelPhoto", imgSrc.length, id);
@@ -247,7 +310,7 @@ const ViewPhoto = (props) => {
 };
 
 const closeBtnStyle = {
-  position: 'absolute',  
-  top: '0.5rem',         
-  right: '0.5rem',       
+  position: 'absolute',
+  top: '0.5rem',
+  right: '0.5rem',
 };
