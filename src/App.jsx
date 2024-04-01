@@ -47,7 +47,7 @@ export default function App(props) {
       longitude: longitude,
       error: "",
       mapURL: `https://www.openstreetmap.org/#map=18/${latitude}/${longitude}`, // W07 CAM
-      smsURL: `sms://00447700900xxxx?body=https://maps.google.com/?q=${latitude},${longitude}`, // W07 CAM
+      //smsURL: `sms://00447700900xxxx?body=https://maps.google.com/?q=${latitude},${longitude}`, // W07 CAM
     });
   };
 
@@ -56,19 +56,59 @@ export default function App(props) {
     setError("Unable to retrieve your location");
   };
 
+  // function usePersistedState(key, defaultValue) {
+  //   const [state, setState] = useState(
+  //     () => JSON.parse(localStorage.getItem(key)) || defaultValue
+  //   );
+  //   useEffect(() => {
+  //     localStorage.setItem(key, JSON.stringify(state));
+  //   }, [key, state]);
+  //   return [state, setState];
+  // }
+
   function usePersistedState(key, defaultValue) {
-    const [state, setState] = useState(
-      () => JSON.parse(localStorage.getItem(key)) || defaultValue
-    );
+    const [state, setState] = useState(() => {
+      const storedData = localStorage.getItem(key);
+      return storedData ? JSON.parse(storedData) : defaultValue;
+    });
+  
+    // 当 state 更新时，将其写入 localStorage
     useEffect(() => {
       localStorage.setItem(key, JSON.stringify(state));
     }, [key, state]);
+  
+    // 监听 localStorage 变化事件，这个 useEffect 应该放在 usePersistedState 钩子函数内部
+    useEffect(() => {
+      function handleStorageChange(e) {
+        if (e.key === key) {
+          try {
+            setState(JSON.parse(e.newValue));
+          } catch (error) {
+            console.error(`Error parsing ${key} from localStorage:`, error);
+            setState(defaultValue);
+          }
+        }
+      }
+  
+      window.addEventListener('storage', handleStorageChange);
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    }, [key, defaultValue]);
+  
     return [state, setState];
   }
+  
+  
 
+
+
+  //
   const [tasks, setTasks] = usePersistedState("tasks", []);
   const [filter, setFilter] = useState("All");
   const [lastInsertedId, setLastInsertedId] = useState("");
+
+  
 
   function toggleTaskCompleted(id) {
     const updatedTasks = tasks.map((task) => {
@@ -81,7 +121,17 @@ export default function App(props) {
       return task;
     });
     setTasks(updatedTasks);
+    
   }
+  // function toggleTaskCompleted(id) {
+  //   setTasks(prevTasks => prevTasks.map(task => {
+  //     if (id === task.id) {
+  //       return { ...task, completed: !task.completed };
+  //     }
+  //     return task;
+  //   }));
+  // }
+  
 
   function deleteTask(id) {
     const isConfirmed = window.confirm("Are you sure you want to delete this item?");
@@ -161,40 +211,71 @@ export default function App(props) {
       navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 100000 }); 
     });
   }
+
+
+  //超时代码，暂时写一下
+  function getLocationWithTimeout(timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+      // 创建一个超时的Promise
+      const timeout = setTimeout(() => {
+        reject(new Error("Unable to retrieve your location in time"));
+      }, timeoutMs);
   
-  async function addTask(name) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeout); 
+          resolve(position);
+        },
+        (err) => {
+          clearTimeout(timeout); 
+          reject(err);
+        },
+        { timeout: timeoutMs }
+      );
+    });
+  }
+
+  
+  //async function addTask(name) {
+  function addTask(name) {
     console.log('addTask is called with:', name);
     const id = "todo-" + nanoid();
     let location = { latitude: "Unknown", longitude: "Unknown"};
   
-    try {
-      const position = await getLocation();
-      location = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      };
-      setError(null); // 如果位置获取成功，清除之前的错误信息
-    } catch (err) {
-      console.error("Geolocation error: ", err);
-      setError("Location information cannot be obtained"); // 设置错误状态
-
-    }
+    // try {
+    //   const position = await getLocation();
+    //   location = {
+    //     latitude: position.coords.latitude,
+    //     longitude: position.coords.longitude
+    //   };
+    //   setError(null); // 如果位置获取成功，清除之前的错误信息
+    //   success(position, id);
+    // } catch (err) {
+    //   console.error("Geolocation error: ", err);
+    //   setError("error"); // 设置错误状态
+    // }
   
     const newTask = {
       id: id,
       name: name,
       completed: false,
-      location: location
+      location: location,
+      //location: { latitude: "##", longitude: "##", error: "##" },
     };
-  
+    setLastInsertedId(id);
     setTasks(prevTasks => {
       const updatedTasks = [...prevTasks, newTask];
+      console.log('New tasks list:', updatedTasks); // 输出新的任务列表到控制台
       return updatedTasks;
     });
+    
   
-    // 任务添加后清空输入
     setName('');
   }
+
+
+
+  
   useEffect(() => {
     console.log('Updated tasks list:', tasks);
   }, [tasks]);
@@ -210,12 +291,24 @@ export default function App(props) {
       listHeadingRef.current.focus();
     }
   }, [tasks.length, prevTaskLength]);
+
+  
   useEffect(() => {
     console.log("Updated tasks list:", tasks);
   }, [tasks]);
+
+
+
+
+
+
+
+
+
+  //前端
   return (
     <div className="todoapp stack-large">
-      <h1>JYP TodoMatic</h1>
+      <h1>YJP TodoMatic</h1>
       <Form addTask={addTask} geoFindMe={geoFindMe} />{" "}
       {error && <div className="error">{error}</div>}
       <div className="filters btn-group stack-exception">{filterList}</div>

@@ -2,7 +2,7 @@
   "name": "moz-todo-react",
   "version": "0.3.0",
   "private": true,
-  "homepage": "https://mdn.github.io/todo-react/",
+  "homepage": "https://github.com/superJinping/Todo-list",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000 --open",
