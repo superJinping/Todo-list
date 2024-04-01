@@ -1,26 +1,68 @@
+/* src/components/WebcamCapture.module.css */
 
-.webcamCaptureContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+.webcamContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%; /* 防止容器超出屏幕宽度 */
+  margin: auto; /* 如果需要，为了在页面中水平居中 */
+  position: relative; /* 对于绝对定位的子元素 */
+  max-width: 90vw; /* 或更大的百分比，例如90vw */
+}
+
+.webcam, .webcam img {
+  width: 100%; /* 使得摄像头和图片宽度适应其父容器 */
+  height: auto; /* 保持图片的宽高比 */
+  max-height: 90vh; /* 或更大的百分比，例如90vh */
+  object-fit: contain; /* 保持宽高比不裁剪图片 */
+}
+
+
+.btn-group {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.btn {
+  margin: 0 5px; /* Adds space between buttons */
+  /* Add more button styling as needed */
+}
+
+/* 添加关闭按钮的样式 */
+.closeBtn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  /* 添加更多关闭按钮样式 */
+  z-index: 1000;
+}
+
+/* 媒体查询 */
+@media (max-width: 600px) {
+  .webcam, .webcam img {
+    width: 100%; /* 使得摄像头和图片宽度适应其父容器 */
+    height: auto; /* 保持图片的宽高比 */
+    max-height: 90vh; /* 或更大的百分比，例如90vh */
+    object-fit: contain; /* 保持宽高比不裁剪图片 */
   }
   
-  .btn {
-    padding: 10px 15px;
-    margin-top: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
+  .btn-group .btn {
+    padding: 5px 10px;
+    font-size: 0.8rem; /* 调整移动设备上按钮的大小 */
   }
-  
-  .btnCapture {
-    background-color: #28a745;
-  }
-  
-  .btnSave {
-    background-color: #dc3545;
-  }
-  
+}
+
+
+
+
+/* 上传的图片 */
+/* 控制图片的大小和布局 */
+.imageFullSize {
+  max-width: 100%;  /* 宽度最大不超过容器宽度 */
+  max-height: 80vh; /* 高度最大不超过视窗的80% */
+  object-fit: contain; /* 图片保持比例 */
+}

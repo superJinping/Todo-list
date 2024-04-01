@@ -13,8 +13,9 @@ import PhotoIcon from '@mui/icons-material/Photo';
 import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLiveQuery } from 'dexie-react-hooks';
+import styles from './WebcamCapture.module.css';
 
-// ...其余的组件代码
+
 
 
 function usePrevious(value) {
@@ -250,7 +251,6 @@ export default function Todo(props) {
 }
 
 // W07 CAM - New Component WebcamCapture
-//
 const WebcamCapture = (props, closePopup) => {
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
@@ -295,12 +295,17 @@ const WebcamCapture = (props, closePopup) => {
   };
 
   return (
-    <>
+    <div className={styles.webcamContainer}>
       {!imgSrc && (
-        <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" />
+        <Webcam 
+        audio={false} 
+        ref={webcamRef} 
+        screenshotFormat="image/jpeg"
+        className={styles.webcam}
+         />
       )}
-      {imgSrc && <img src={imgSrc} alt="Captured" />}
-      <div className="btn-group">
+      {imgSrc && <img src={imgSrc} alt="Captured" className={styles.webcam} />}
+      <div className={styles['btn-group']}>
         {!imgSrc && (
           <button
             type="button"
@@ -320,7 +325,7 @@ const WebcamCapture = (props, closePopup) => {
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
@@ -332,13 +337,13 @@ const ViewPhoto = (props) => {
 // 如果 useLiveQuery 还没有返回结果（包括完成加载但没有结果的情况），
   // 我们会显示“暂时没有照片”。
   if (!photo) {
-    return <div>暂时没有照片</div>;
+    return <div>No photo</div>;
   }
 
   // 如果有照片，我们将显示它。
   return (
     <div>
-      <img src={photo.imgSrc} alt={props.name} />
+      <img src={photo.imgSrc} alt={props.name} className={styles.imageFullSize}/>
     </div>
   );
 };
@@ -395,4 +400,7 @@ const closeBtnStyle = {
   position: 'absolute',
   top: '0.5rem',
   right: '0.5rem',
+  zIndex: 1000,
 };
+
+

@@ -213,28 +213,6 @@ export default function App(props) {
   }
 
 
-  //超时代码，暂时写一下
-  function getLocationWithTimeout(timeoutMs = 5000) {
-    return new Promise((resolve, reject) => {
-      // 创建一个超时的Promise
-      const timeout = setTimeout(() => {
-        reject(new Error("Unable to retrieve your location in time"));
-      }, timeoutMs);
-  
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          clearTimeout(timeout); 
-          resolve(position);
-        },
-        (err) => {
-          clearTimeout(timeout); 
-          reject(err);
-        },
-        { timeout: timeoutMs }
-      );
-    });
-  }
-
   
   //async function addTask(name) {
   function addTask(name) {
