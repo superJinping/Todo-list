@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Popup from 'reactjs-popup'; // W07 CAM
 import "reactjs-popup/dist/index.css"; // W07 CAM
 import Webcam from "react-webcam"; // W07 CAM
-import { addPhoto, GetPhotoSrc, db } from "../db.jsx"; // W07 CAM
+import { addPhoto, GetPhotoSrc } from "../db.jsx"; // W07 CAM
 import Icon from "@mui/material/Icon";
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
@@ -11,12 +11,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import CloseIcon from '@mui/icons-material/Close';
 import PhotoIcon from '@mui/icons-material/Photo';
 import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useLiveQuery } from 'dexie-react-hooks';
-import styles from './WebcamCapture.module.css';
+import ShareIcon from '@mui/icons-material/Share';
 
-
-
+import 'leaflet/dist/leaflet.css';
 
 function usePrevious(value) {
   const ref = useRef(null);
@@ -100,6 +98,31 @@ export default function Todo(props) {
     );
   }
 
+
+  async function pickContact() {
+    if ('contacts' in navigator && 'ContactsManager' in window) {
+      try {
+        const contacts = await navigator.contacts.select(['tel'], {multiple: false});
+        if (contacts.length > 0) {
+          alert('Selected contact phone number: ' + contacts[0].tel);
+          console.log('Selected contact phone number:', contacts[0].tel);
+          window.location.href = `tel:${contacts[0].tel}`;
+        } else {
+          alert('No contacts selected');
+          console.log('No contacts selected');
+        }
+      } catch (error) {
+        alert('Error accessing contacts: ' + error);
+        console.error('Error accessing contacts:', error);
+      }
+    } else {
+      alert('Contact Picker API not supported');
+      console.log('Contact Picker API not supported');
+    }
+  }
+
+
+
   const editingTemplate = (
     <form className="stack-small" onSubmit={handleSubmit}>
       <div className="form-group">
@@ -157,6 +180,7 @@ export default function Todo(props) {
             </Popup>
           )}
         </label>
+        <button onClick={pickContact} className="button">Select a contact and make a call</button>
       </div>
       <div className="btn-group">
         <button
@@ -209,7 +233,7 @@ export default function Todo(props) {
         <Popup
           trigger={
             <button type="button" className="btn icon-button">
-              <PhotoIcon /> {/* 使用新图标 */}
+              <PhotoIcon />
               <span className="visually-hidden">Choose Image</span>
             </button>
           }
@@ -227,6 +251,26 @@ export default function Todo(props) {
             </div>
           )}
         </Popup>
+        <button
+          type="button"
+          className="btn icon-button"
+          onClick={() => {
+            if (navigator.share) {
+              navigator.share({
+                title: 'Share the task',
+                text: 'Check out this cool task！',
+                url: document.location.href,
+              })
+                .then(() => console.log('Success Sharing'))
+                .catch((error) => console.log('Share failures', error));
+            } else {
+              console.log('Web Share API is not supported');
+            }
+          }}
+        >
+          <ShareIcon />
+          <span className="visually-hidden">Share</span>
+        </button>
 
         <button
           type="button"
@@ -251,6 +295,7 @@ export default function Todo(props) {
 }
 
 // W07 CAM - New Component WebcamCapture
+//
 const WebcamCapture = (props, closePopup) => {
   const webcamRef = useRef(null);
   const [imgSrc, setImgSrc] = useState(null);
@@ -295,17 +340,12 @@ const WebcamCapture = (props, closePopup) => {
   };
 
   return (
-    <div className={styles.webcamContainer}>
+    <>
       {!imgSrc && (
-        <Webcam 
-        audio={false} 
-        ref={webcamRef} 
-        screenshotFormat="image/jpeg"
-        className={styles.webcam}
-         />
+        <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" />
       )}
-      {imgSrc && <img src={imgSrc} alt="Captured" className={styles.webcam} />}
-      <div className={styles['btn-group']}>
+      {imgSrc && <img src={imgSrc} alt="Captured" />}
+      <div className="btn-group">
         {!imgSrc && (
           <button
             type="button"
@@ -325,31 +365,30 @@ const WebcamCapture = (props, closePopup) => {
           </button>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
 // W07 CAM - New Component ViewPhoto
+//
 const ViewPhoto = (props) => {
-  // 使用 useLiveQuery 直接在组件内部进行数据查询。
-  // 我们使用 `.first()` 来直接获取第一个匹配项而不是一个数组。
-  const photo = useLiveQuery(() => db.photos.where("id").equals(props.id).first());
-// 如果 useLiveQuery 还没有返回结果（包括完成加载但没有结果的情况），
-  // 我们会显示“暂时没有照片”。
-  if (!photo) {
-    return <div>No photo</div>;
-  }
+  // Directly use the hook inside the component
+  const imgArray = useLiveQuery(() => db.photos.where("id").equals(props.id).toArray(), [props.id]);
 
-  // 如果有照片，我们将显示它。
+  // If imgArray is still being fetched, it might be undefined
+  const photoSrc = imgArray && imgArray.length > 0 ? imgArray[0].imgSrc : undefined;
+
+  // Render the image if photoSrc is defined, otherwise display a message
   return (
     <div>
-      <img src={photo.imgSrc} alt={props.name} className={styles.imageFullSize}/>
+      {photoSrc ? (
+        <img src={photoSrc} alt={props.name} />
+      ) : (
+        <div>暂无照片</div>
+      )}
     </div>
   );
 };
-
-
-
 
 
 //从相册中选取的照片
@@ -372,10 +411,10 @@ function ImagePicker({ onImagePicked, id, photoedTask }) {
   const handleConfirmSelection = async () => {
     if (selectedImage) {
       try {
-        await addPhoto(id, selectedImage); // 保存照片
+        await addPhoto(id, selectedImage);
         alert("Photo uploaded successfully!");
-        photoedTask(id); // 通知父组件
-        onImagePicked(selectedImage); // 可选，如果需要在父组件中进一步处理
+        photoedTask(id);
+        onImagePicked(selectedImage);
       } catch (error) {
         console.error("Failed to upload photo:", error);
       }
@@ -400,7 +439,4 @@ const closeBtnStyle = {
   position: 'absolute',
   top: '0.5rem',
   right: '0.5rem',
-  zIndex: 1000,
 };
-
-
