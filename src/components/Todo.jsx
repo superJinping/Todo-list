@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import Popup from 'reactjs-popup'; // W07 CAM
 import "reactjs-popup/dist/index.css"; // W07 CAM
 import Webcam from "react-webcam"; // W07 CAM
-import { addPhoto, GetPhotoSrc } from "../db.jsx"; // W07 CAM
+import { db, addPhoto, GetPhotoSrc } from "../db.jsx"; // W07 CAM
 import Icon from "@mui/material/Icon";
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
@@ -13,7 +13,7 @@ import PhotoIcon from '@mui/icons-material/Photo';
 import { MapContainer, TileLayer, Marker, Popup as LeafletPopup } from 'react-leaflet';
 import { useLiveQuery } from 'dexie-react-hooks';
 import ShareIcon from '@mui/icons-material/Share';
-
+import styles from "./WebcamCapture.module.css";
 import 'leaflet/dist/leaflet.css';
 
 function usePrevious(value) {
@@ -340,11 +340,14 @@ const WebcamCapture = (props, closePopup) => {
   };
 
   return (
-    <>
+    <div className={styles.webcamContainer}>
       {!imgSrc && (
-        <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg" />
+        <Webcam audio={false} 
+        ref={webcamRef} 
+        screenshotFormat="image/jpeg"
+        className={styles.webcam} />
       )}
-      {imgSrc && <img src={imgSrc} alt="Captured" />}
+      {imgSrc && <img src={imgSrc} alt="Captured" className={styles.capturedImg}/>}
       <div className="btn-group">
         {!imgSrc && (
           <button
@@ -365,7 +368,7 @@ const WebcamCapture = (props, closePopup) => {
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
@@ -382,9 +385,9 @@ const ViewPhoto = (props) => {
   return (
     <div>
       {photoSrc ? (
-        <img src={photoSrc} alt={props.name} />
+        <img src={photoSrc} alt={props.name} className={styles.imageFullSize} />
       ) : (
-        <div>暂无照片</div>
+        <div>No photo</div>
       )}
     </div>
   );
@@ -426,7 +429,7 @@ function ImagePicker({ onImagePicked, id, photoedTask }) {
       <input type="file" accept="image/*" onChange={handleImageChange} />
       {selectedImage && (
         <>
-          <img src={selectedImage} alt="Selected" style={{ maxWidth: '100%', maxHeight: '400px' }} />
+          <img src={selectedImage} alt="Selected" className={styles.imageFullSize} />
           <button onClick={handleConfirmSelection}>Confirm Upload</button>
         </>
       )}
@@ -439,4 +442,5 @@ const closeBtnStyle = {
   position: 'absolute',
   top: '0.5rem',
   right: '0.5rem',
+  zIndex: 1000
 };

@@ -6,17 +6,24 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 100%; /* 防止容器超出屏幕宽度 */
-  margin: auto; /* 如果需要，为了在页面中水平居中 */
-  position: relative; /* 对于绝对定位的子元素 */
-  max-width: 90vw; /* 或更大的百分比，例如90vw */
+  max-width: 100%;
+  margin: auto; 
+  position: relative;
+  max-width: 90vw;
+} 
+
+
+.webcam {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
-.webcam, .webcam img {
-  width: 100%; /* 使得摄像头和图片宽度适应其父容器 */
-  height: auto; /* 保持图片的宽高比 */
-  max-height: 90vh; /* 或更大的百分比，例如90vh */
-  object-fit: contain; /* 保持宽高比不裁剪图片 */
+.capturedImg {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  /* 调整图片样式以使其响应式 */
 }
 
 
@@ -28,26 +35,21 @@
 }
 
 .btn {
-  margin: 0 5px; /* Adds space between buttons */
-  /* Add more button styling as needed */
+  margin: 0 5px; 
 }
 
-/* 添加关闭按钮的样式 */
-.closeBtn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  /* 添加更多关闭按钮样式 */
-  z-index: 1000;
-}
 
 /* 媒体查询 */
-@media (max-width: 600px) {
-  .webcam, .webcam img {
-    width: 100%; /* 使得摄像头和图片宽度适应其父容器 */
-    height: auto; /* 保持图片的宽高比 */
-    max-height: 90vh; /* 或更大的百分比，例如90vh */
-    object-fit: contain; /* 保持宽高比不裁剪图片 */
+@media (max-width: 768px) {
+  .webcam {
+    /* 在小屏幕上调整摄像头预览的样式 */
+    width: 100%;
+    height: auto;
+  }
+  .capturedImg {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
   }
   
   .btn-group .btn {
@@ -62,7 +64,7 @@
 /* 上传的图片 */
 /* 控制图片的大小和布局 */
 .imageFullSize {
-  max-width: 100%;  /* 宽度最大不超过容器宽度 */
-  max-height: 80vh; /* 高度最大不超过视窗的80% */
-  object-fit: contain; /* 图片保持比例 */
+  max-width: 100%;  
+  max-height: 80vh; 
+  object-fit: contain; 
 }
